@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} · Expense Reimbursement{% endblock %}
+{% block content %}
+<div class="page-heading"><div class="eyebrow">CLAIM ENTRY</div><h1>{{ title }}</h1><p class="text-secondary mb-0">Complete the required information. New claims are saved as Drafts.</p></div>
+<div class="row"><div class="col-12 col-xl-8"><div class="panel-card">
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if duplicate_warning %}<div class="alert alert-warning"><strong>Possible duplicate detected.</strong> A claim already exists with the same employee, amount, expense date, and receipt number:
+    <ul class="mb-2 mt-2">{% for d in duplicate_warning %}<li><a href="{{ url_for('claims.detail', claim_id=d['id']) }}">{{ d['claim_no'] }}</a> · {{ d['status'] }}</li>{% endfor %}</ul>
+    <div class="form-check"><input class="form-check-input" type="checkbox" name="confirm_duplicate" value="yes" id="confirm_duplicate" required><label class="form-check-label" for="confirm_duplicate">I reviewed this warning and still want to save this claim.</label></div>
+  </div>{% endif %}
+    <div class="row g-3">
+      <div class="col-md-6"><label class="form-label" for="category">Category <span class="text-danger">*</span></label><select class="form-select {% if errors.get('category') %}is-invalid{% endif %}" id="category" name="category" required><option value="">Choose category</option>{% for c in app_categories %}<option value="{{ c }}" {% if form_data.get('category')==c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>{% if errors.get('category') %}<div class="invalid-feedback">{{ errors['category'] }}</div>{% endif %}</div>
+      <div class="col-md-6"><label class="form-label" for="amount">Amount (IDR) <span class="text-danger">*</span></label><input class="form-control {% if errors.get('amount') %}is-invalid{% endif %}" id="amount" name="amount" type="number" min="1" max="100000000" step="1" required value="{{ form_data.get('amount','') }}" placeholder="e.g. 250000">{% if errors.get('amount') %}<div class="invalid-feedback">{{ errors['amount'] }}</div>{% endif %}<div class="form-text">Positive whole number, maximum IDR 100,000,000.</div></div>
+      <div class="col-md-6"><label class="form-label" for="expense_date">Expense date <span class="text-danger">*</span></label><input class="form-control {% if errors.get('expense_date') %}is-invalid{% endif %}" id="expense_date" name="expense_date" type="date" required min="{{ min_date }}" max="{{ today }}" value="{{ form_data.get('expense_date','') }}">{% if errors.get('expense_date') %}<div class="invalid-feedback">{{ errors['expense_date'] }}</div>{% endif %}</div>
+      <div class="col-md-6"><label class="form-label" for="receipt_number">Receipt number <span class="text-danger">*</span></label><input class="form-control {% if errors.get('receipt_number') %}is-invalid{% endif %}" id="receipt_number" name="receipt_number" minlength="5" maxlength="20" pattern="[A-Za-z0-9]{5,20}" required value="{{ form_data.get('receipt_number','') }}" placeholder="e.g. RC202611234">{% if errors.get('receipt_number') %}<div class="invalid-feedback">{{ errors['receipt_number'] }}</div>{% endif %}<div class="form-text">5–20 letters or numbers, no spaces.</div></div>
+      <div class="col-12"><label class="form-label" for="description">Description <span class="text-danger">*</span></label><textarea class="form-control {% if errors.get('description') %}is-invalid{% endif %}" id="description" name="description" minlength="10" maxlength="255" rows="4" required placeholder="Explain the business purpose of this expense">{{ form_data.get('description','') }}</textarea>{% if errors.get('description') %}<div class="invalid-feedback">{{ errors['description'] }}</div>{% endif %}<div class="form-text">10–255 characters.</div></div>
+    </div>
+    <div class="form-actions mt-4"><a class="btn btn-light" href="{{ url_for('claims.index') }}">Cancel</a><button class="btn btn-primary" type="submit">Save as Draft</button></div>
+  </form>
+</div></div>
+<div class="col-12 col-xl-4 mt-3 mt-xl-0"><div class="side-note"><div class="note-icon">i</div><h3>Before you submit</h3><ul><li>Use a clear business-related description.</li><li>Check that the amount matches your receipt.</li><li>Expense dates must be within the last 90 days.</li><li>Duplicate claims are flagged for review.</li></ul><div class="limit-note">Claims above <strong>Rp 5.000.000</strong> require Director approval.</div></div></div></div>
+{% endblock %}

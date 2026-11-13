@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard · Expense Reimbursement{% endblock %}
+{% block content %}
+<div class="page-heading d-flex flex-wrap align-items-start justify-content-between gap-3">
+  <div><div class="eyebrow">OVERVIEW</div><h1>Dashboard</h1><p class="text-secondary mb-0">A quick view of claims, approvals, and reimbursement activity.</p></div>
+  {% if logged_in_user['role'] == 'Employee' %}<a class="btn btn-primary" href="{{ url_for('claims.create') }}">＋ New claim</a>{% elif logged_in_user['role'] == 'Finance' %}<a class="btn btn-primary" href="{{ url_for('finance.payments') }}">Open payments</a>{% elif logged_in_user['role'] in ['Manager','Admin'] %}<a class="btn btn-primary" href="{{ url_for('approvals.inbox') }}">Review pending claims</a>{% endif %}
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3"><div class="stat-card"><div class="stat-label">Visible claims</div><div class="stat-value">{{ total_claims }}</div><div class="stat-foot">Within your access scope</div></div></div>
+  <div class="col-6 col-xl-3"><div class="stat-card"><div class="stat-label">Total claim value</div><div class="stat-value stat-currency">{{ total_amount|idr }}</div><div class="stat-foot">All visible statuses</div></div></div>
+  <div class="col-6 col-xl-3"><div class="stat-card"><div class="stat-label">Pending action</div><div class="stat-value">{{ pending_count }}</div><div class="stat-foot">{% if logged_in_user['role']=='Finance' %}Approved claims awaiting payment{% elif logged_in_user['role']=='Employee' %}Rejected claims needing attention{% else %}Claims awaiting your review{% endif %}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="stat-card"><div class="stat-label">Paid claims</div><div class="stat-value">{{ status_stats['Paid']['count'] }}</div><div class="stat-foot">{{ status_stats['Paid']['total']|idr }} reimbursed</div></div></div>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-12 col-xl-8"><div class="panel-card h-100"><div class="panel-heading"><div><h2>Monthly expense trend</h2><p>Claimed amount by expense month</p></div><span class="panel-icon">↗</span></div><div class="chart-wrap"><canvas id="monthlyChart"></canvas></div></div></div>
+  <div class="col-12 col-xl-4"><div class="panel-card h-100"><div class="panel-heading"><div><h2>Status overview</h2><p>Counts in your access scope</p></div></div>
+    {% for status, values in status_stats.items() %}<div class="status-line"><span class="status-badge status-{{ status|lower }}">{{ status }}</span><strong>{{ values['count'] }}</strong><span class="text-secondary small">{{ values['total']|idr }}</span></div>{% endfor %}
+  </div></div>
+</div>
+<div class="row g-3">
+  <div class="col-12 col-xl-5"><div class="panel-card h-100"><div class="panel-heading"><div><h2>Top categories</h2><p>By total claim amount</p></div></div>
+    {% for item in top_categories %}<div class="category-row"><div class="d-flex justify-content-between"><span>{{ item['category'] }}</span><strong>{{ item['total']|idr }}</strong></div><div class="progress mt-2"><div class="progress-bar" style="width: {{ (item['total'] / (top_categories[0]['total'] or 1) * 100)|round|int }}%"></div></div></div>{% else %}<p class="text-secondary">No category data yet.</p>{% endfor %}
+  </div></div>
+  <div class="col-12 col-xl-7"><div class="panel-card h-100"><div class="panel-heading"><div><h2>Recent claims</h2><p>Latest activity visible to your role</p></div><a href="{{ url_for('claims.index') }}" class="small">View all →</a></div>
+    <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Claim</th><th>Employee</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+    {% for claim in recent_claims %}<tr><td><a class="fw-semibold" href="{{ url_for('claims.detail', claim_id=claim['id']) }}">{{ claim['claim_no'] }}</a><div class="text-secondary small">{{ claim['expense_date'] }}</div></td><td>{{ claim['employee_name'] }}</td><td class="fw-semibold">{{ claim['amount']|idr }}</td><td><span class="status-badge status-{{ claim['status']|lower }}">{{ claim['status'] }}</span></td></tr>{% else %}<tr><td colspan="4" class="text-center text-secondary py-4">No claims found.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const chartLabels = {{ monthly_labels|tojson }};
+const chartValues = {{ monthly_values|tojson }};
+const chartCanvas = document.getElementById('monthlyChart');
+if (chartCanvas) new Chart(chartCanvas, {
+  type: 'bar', data: {labels: chartLabels, datasets: [{label: 'Claim amount (IDR)', data: chartValues, backgroundColor: '#4d78d0', borderRadius: 7, maxBarThickness: 42}]},
+  options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}, tooltip: {callbacks: {label: (ctx) => 'Rp ' + Number(ctx.raw).toLocaleString('id-ID')}}}, scales: {y: {beginAtZero: true, ticks: {callback: (v) => 'Rp ' + Number(v).toLocaleString('id-ID', {notation: 'compact'})}}, x: {grid: {display: false}}}}
+});
+</script>
+{% endblock %}

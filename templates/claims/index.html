@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Claims · Expense Reimbursement{% endblock %}
+{% block content %}
+<div class="page-heading d-flex flex-wrap align-items-start justify-content-between gap-3"><div><div class="eyebrow">TRANSACTION MANAGEMENT</div><h1>Expense claims</h1><p class="text-secondary mb-0">Search, review, and track reimbursement claims available to your role.</p></div>{% if logged_in_user['role']=='Employee' %}<a class="btn btn-primary" href="{{ url_for('claims.create') }}">＋ New claim</a>{% endif %}</div>
+<div class="panel-card mb-3">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-12 col-md-4"><label class="form-label small fw-semibold">Search</label><input name="q" value="{{ request.args.get('q','') }}" class="form-control" placeholder="Claim no, employee, receipt or description"></div>
+    <div class="col-6 col-md-2"><label class="form-label small fw-semibold">Status</label><select name="status" class="form-select"><option value="">All statuses</option>{% for s in ['Draft','Submitted','Approved','Rejected','Paid'] %}<option value="{{ s }}" {% if request.args.get('status')==s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-md-2"><label class="form-label small fw-semibold">Category</label><select name="category" class="form-select"><option value="">All categories</option>{% for c in app_categories %}<option value="{{ c }}" {% if request.args.get('category')==c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+    {% if logged_in_user['role'] in ['Admin','Finance'] %}<div class="col-6 col-md-2"><label class="form-label small fw-semibold">Department</label><select name="department" class="form-select"><option value="">All departments</option>{% for d in departments %}<option value="{{ d }}" {% if request.args.get('department')==d %}selected{% endif %}>{{ d }}</option>{% endfor %}</select></div>{% endif %}
+    <div class="col-6 col-md-2"><label class="form-label small fw-semibold">From date</label><input class="form-control" type="date" name="date_from" value="{{ request.args.get('date_from','') }}"></div>
+    <div class="col-6 col-md-2"><label class="form-label small fw-semibold">To date</label><input class="form-control" type="date" name="date_to" value="{{ request.args.get('date_to','') }}"></div>
+    <div class="col-6 col-md-2"><label class="form-label small fw-semibold">Sort by</label><select name="sort" class="form-select"><option value="date_desc">Newest date</option><option value="date_asc" {% if request.args.get('sort')=='date_asc' %}selected{% endif %}>Oldest date</option><option value="amount_desc" {% if request.args.get('sort')=='amount_desc' %}selected{% endif %}>Highest amount</option><option value="amount_asc" {% if request.args.get('sort')=='amount_asc' %}selected{% endif %}>Lowest amount</option><option value="status" {% if request.args.get('sort')=='status' %}selected{% endif %}>Status</option></select></div>
+    {% if logged_in_user['role']=='Admin' %}<div class="col-6 col-md-2"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="include_deleted" name="include_deleted" value="1" {% if request.args.get('include_deleted')=='1' %}checked{% endif %}><label class="form-check-label small" for="include_deleted">Include archived</label></div></div>{% endif %}
+    <div class="col-auto"><button class="btn btn-primary">Apply filters</button> <a class="btn btn-light" href="{{ url_for('claims.index') }}">Clear</a></div>
+    <div class="col-auto ms-auto"><a class="btn btn-outline-success" href="{{ url_for('exports.claims_excel', **request.args.to_dict()) }}">⇩ Export filtered Excel</a></div>
+  </form>
+</div>
+<div class="panel-card">
+  <div class="d-flex align-items-center justify-content-between mb-3"><div><h2 class="panel-title">Claim register</h2><p class="panel-subtitle mb-0">{{ total }} record(s) · page {{ page }} of {{ pages }}</p></div></div>
+  <div class="table-responsive"><table class="table align-middle table-hover"><thead><tr><th>Claim no.</th><th>Employee</th><th>Department</th><th>Category</th><th>Expense date</th><th class="text-end">Amount</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for claim in claims %}<tr class="{% if claim['is_deleted'] %}table-light text-secondary{% endif %}"><td><a class="fw-semibold" href="{{ url_for('claims.detail', claim_id=claim['id']) }}">{{ claim['claim_no'] }}</a>{% if claim['is_deleted'] %}<div class="small text-danger">Archived</div>{% endif %}</td><td>{{ claim['employee_name'] }}</td><td>{{ claim['department'] }}</td><td>{{ claim['category'] }}</td><td>{{ claim['expense_date'] }}</td><td class="text-end fw-semibold">{{ claim['amount']|idr }}</td><td><span class="status-badge status-{{ claim['status']|lower }}">{{ claim['status'] }}</span></td><td class="text-end"><a class="btn btn-sm btn-light" href="{{ url_for('claims.detail', claim_id=claim['id']) }}">Open</a></td></tr>
+    {% else %}<tr><td colspan="8" class="text-center py-5 text-secondary">No claims match your filters.</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% if pages > 1 %}<nav class="mt-3"><ul class="pagination pagination-sm justify-content-end mb-0">{% for p in range(1,pages+1) %}<li class="page-item {% if p==page %}active{% endif %}"><a class="page-link" href="?{{ request.args.to_dict()|urlencode }}&page={{ p }}">{{ p }}</a></li>{% endfor %}</ul></nav>{% endif %}
+</div>
+{% endblock %}

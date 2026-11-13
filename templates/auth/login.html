@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Sign in · Expense Reimbursement{% endblock %}
+{% block public_content %}
+<div class="login-page">
+  <div class="login-panel">
+    <div class="login-brand"><span class="brand-mark">ER</span><span>Expense Reimbursement</span></div>
+    <div class="login-card">
+      <div class="eyebrow">UNIVERSITY FINANCE WORKSPACE</div>
+      <h1>Welcome back</h1>
+      <p class="text-secondary mb-4">Sign in to manage expense claims and reimbursements.</p>
+      <form method="post" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3"><label class="form-label" for="username">Username</label><input class="form-control form-control-lg" id="username" name="username" autocomplete="username" required autofocus placeholder="Enter your username"></div>
+        <div class="mb-4"><label class="form-label" for="password">Password</label><input class="form-control form-control-lg" id="password" name="password" type="password" autocomplete="current-password" required placeholder="Enter your password"></div>
+        <button class="btn btn-primary btn-lg w-100">Sign in</button>
+      </form>
+      <div class="demo-hint mt-4">
+        <div class="fw-semibold mb-1">Demo credentials</div>
+        <div class="small text-secondary">Employee: <code>employee1</code> / <code>Employee@123</code></div>
+        <div class="small text-secondary">Manager: <code>manager_it</code> / <code>Manager@123</code></div>
+        <div class="small text-secondary">Finance: <code>finance1</code> / <code>Finance@123</code></div>
+        <div class="small text-secondary">Admin / Director: <code>admin</code> / <code>Admin@123</code></div>
+        <div class="small text-secondary mt-2">All accounts use fictional demo data. Full account list is in README.md.</div>
+      </div>
+    </div>
+    <div class="text-center text-secondary small mt-4">15-minute inactivity timeout · CSRF-protected forms</div>
+  </div>
+</div>
+{% endblock %}
